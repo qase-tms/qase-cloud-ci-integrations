@@ -68,7 +68,7 @@ tests have passed.
 | `run_title`         | Title of the test run                                | Yes      |         |
 | `case_ids`          | Comma-separated list of case IDs                     | No       |         |
 | `include_all_cases` | Include all cases in the project                     | No       | `false` |
-| `environment_id`    | Environment ID to assign to the run                  | No       |         |
+| `environment_slug`  | Environment SLUG to assign to the run                | No       |         |
 | `browser`           | Browser name (chromium, firefox, or webkit)          | No       |         |
 | `timeout`           | Maximum time to wait for run completion (in seconds) | No       | `600`   |
 | `poll_interval`     | Time between status checks (in seconds)              | No       | `10`    |

@@ -19,8 +19,8 @@ if [ "$INPUT_INCLUDE_ALL_CASES" = "true" ]; then
   CMD+=" --include-all-cases"
 fi
 
-if [ -n "$INPUT_ENVIRONMENT_ID" ]; then
-  CMD+=" --environment-id $INPUT_ENVIRONMENT_ID"
+if [ -n "$INPUT_ENVIRONMENT_SLUG" ]; then
+  CMD+=" --environment-slug $INPUT_ENVIRONMENT_SLUG"
 fi
 
 if [ -n "$INPUT_BROWSER" ]; then

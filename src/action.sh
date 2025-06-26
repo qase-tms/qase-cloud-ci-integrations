@@ -7,7 +7,7 @@ set -e
 
 # Function to display usage information
 usage() {
-  echo "Usage: $0 --project-code CODE --api-token TOKEN --run-title TITLE [--case-ids IDS] [--environment-id ID] [--include-all-cases] [--browser NAME] [--timeout SECONDS] [--poll-interval SECONDS]"
+  echo "Usage: $0 --project-code CODE --api-token TOKEN --run-title TITLE [--case-ids IDS] [--environment-slug SLUG] [--include-all-cases] [--browser NAME] [--timeout SECONDS] [--poll-interval SECONDS]"
   echo ""
   echo "Required arguments:"
   echo "  --project-code CODE     Qase project code"
@@ -17,7 +17,7 @@ usage() {
   echo "Optional arguments:"
   echo "  --browser NAME          Name of a browser to run autotests on (chromium, firefox, webkit)"
   echo "  --case-ids IDS          Comma-separated list of case IDs (e.g., '1,2,3')"
-  echo "  --environment-id ID     Environment ID to assign to the run"
+  echo "  --environment-slug SLUG Environment SLUG to assign to the run"
   echo "  --include-all-cases     Include all cases in the project"
   echo "  --timeout SECONDS       Maximum time to wait for run completion (default: 600)"
   echo "  --poll-interval SECONDS Time between status checks (default: 10)"
@@ -27,7 +27,6 @@ usage() {
 
 # Default values
 QASE_HOST="https://api.qase.io"
-RUN_TYPE="cloud"
 TIMEOUT=600
 POLL_INTERVAL=10
 INCLUDE_ALL_CASES=false
@@ -56,8 +55,8 @@ while [[ $# -gt 0 ]]; do
       CASE_IDS="$2"
       shift 2
       ;;
-    --environment-id)
-      ENVIRONMENT_ID="$2"
+    --environment-slug)
+      ENVIRONMENT_SLUG="$2"
       shift 2
       ;;
     --include-all-cases)
@@ -116,35 +115,23 @@ fi
 
 echo "Creating test run in Qase project: $PROJECT_CODE"
 
-# Prepare the request payload
-if [ "$INCLUDE_ALL_CASES" = true ]; then
-  REQUEST_DATA=$(cat <<EOF
-{
-  "title": "$RUN_TITLE",
-  "include_all_cases": true,
-  "environment_id": $ENVIRONMENT_ID,
-  "type": "$RUN_TYPE",
-  "cloud_run_config": $CONFIGURATION,
-  "is_autotest": true,
-  "is_cloud": true
-}
-EOF
+# Prepare the request payload using jq for cleaner JSON construction
+REQUEST_DATA=$(jq -n \
+  --arg title "$RUN_TITLE" \
+  --argjson include_all_cases "$INCLUDE_ALL_CASES" \
+  --argjson cloud_run_config "$CONFIGURATION" \
+  --arg environment_slug "${ENVIRONMENT_SLUG:-}" \
+  --arg cases_json "${CASES_JSON:-}" \
+  '{
+    title: $title,
+    include_all_cases: $include_all_cases,
+    cloud_run_config: $cloud_run_config,
+    is_autotest: true,
+    is_cloud: true
+  } |
+  if $environment_slug != "" then . + {environment_slug: $environment_slug} else . end |
+  if $include_all_cases == false and $cases_json != "" then . + {cases: ($cases_json | split(",") | map(tonumber))} else . end'
 )
-else
-  REQUEST_DATA=$(cat <<EOF
-{
-  "title": "$RUN_TITLE",
-  "include_all_cases": false,
-  "cases": [$CASES_JSON],
-  "environment_id": $ENVIRONMENT_ID,
-  "type": "$RUN_TYPE",
-  "cloud_run_config": $CONFIGURATION,
-  "is_autotest": true,
-  "is_cloud": true
-}
-EOF
-)
-fi
 
 # Create the test run
 echo "Creating test run with the following configuration:"
