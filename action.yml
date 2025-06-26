@@ -1,0 +1,44 @@
+name: 'Qase Test Run Action'
+description: 'Starts a test run in Qase, waits for it to finish, and checks for passed status.'
+author: 'Qase Team'
+
+inputs:
+  project_code:
+    description: 'Qase project code'
+    required: true
+  api_token:
+    description: 'Qase API token'
+    required: true
+  run_title:
+    description: 'Title of the test run'
+    required: true
+  case_ids:
+    description: 'Comma-separated list of case IDs'
+    required: false
+  include_all_cases:
+    description: 'Include all cases in the project'
+    required: false
+    default: 'false'
+  environment_id:
+    description: 'Environment ID to assign to the run'
+    required: false
+  browser:
+    description: "Browser on which to run autotests"
+    required: false
+    default: "chromium"
+  timeout:
+    description: 'Maximum time to wait for run completion (in seconds)'
+    required: false
+    default: '600'
+  poll_interval:
+    description: 'Time between status checks (in seconds)'
+    required: false
+    default: '10'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+
+branding:
+  icon: 'check-circle'
+  color: 'green'
