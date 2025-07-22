@@ -19,8 +19,16 @@ if [ "$INPUT_INCLUDE_ALL_CASES" = "true" ]; then
   CMD+=" --include-all-cases"
 fi
 
-if [ -n "$INPUT_ENVIRONMENT_SLUG" ]; then
-  CMD+=" --environment-slug $INPUT_ENVIRONMENT_SLUG"
+if [ -n "$INPUT_ENV_SLUG" ]; then
+  CMD+=" --environment-slug $INPUT_ENV_SLUG"
+fi
+
+if [ -n "$INPUT_ENV_TITLE" ]; then
+  CMD+=" --environment-title '$INPUT_ENV_TITLE'"
+fi
+
+if [ -n "$INPUT_ENV_HOST" ]; then
+  CMD+=" --environment-host '$INPUT_ENV_HOST'"
 fi
 
 if [ -n "$INPUT_BROWSER" ]; then

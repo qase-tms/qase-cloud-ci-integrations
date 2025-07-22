@@ -10,17 +10,19 @@ usage() {
   echo "Usage: $0 --project-code CODE --api-token TOKEN --run-title TITLE [--case-ids IDS] [--environment-slug SLUG] [--include-all-cases] [--browser NAME] [--timeout SECONDS] [--poll-interval SECONDS]"
   echo ""
   echo "Required arguments:"
-  echo "  --project-code CODE     Qase project code"
-  echo "  --api-token TOKEN       Qase API token"
-  echo "  --run-title TITLE       Title of the test run"
+  echo "  --project-code CODE           Qase project code"
+  echo "  --api-token TOKEN             Qase API token"
+  echo "  --run-title TITLE             Title of the test run"
   echo ""
   echo "Optional arguments:"
-  echo "  --browser NAME          Name of a browser to run autotests on (chromium, firefox, webkit)"
-  echo "  --case-ids IDS          Comma-separated list of case IDs (e.g., '1,2,3')"
-  echo "  --environment-slug SLUG Environment SLUG to assign to the run"
-  echo "  --include-all-cases     Include all cases in the project"
-  echo "  --timeout SECONDS       Maximum time to wait for run completion (default: 600)"
-  echo "  --poll-interval SECONDS Time between status checks (default: 10)"
+  echo "  --browser NAME                Name of a browser to run autotests on (chromium, firefox, webkit)"
+  echo "  --case-ids IDS                Comma-separated list of case IDs (e.g., '1,2,3')"
+  echo "  --environment-slug SLUG       Environment SLUG to assign to the run"
+  echo "  --environment-title TITLE     Environment title for creating new environment"
+  echo "  --environment-host HOST       Environment host URL for creating new environment"
+  echo "  --include-all-cases           Include all cases in the project"
+  echo "  --timeout SECONDS             Maximum time to wait for run completion (default: 600)"
+  echo "  --poll-interval SECONDS       Time between status checks (default: 10)"
   echo ""
   exit 1
 }
@@ -57,6 +59,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --environment-slug)
       ENVIRONMENT_SLUG="$2"
+      shift 2
+      ;;
+    --environment-title)
+      ENVIRONMENT_TITLE="$2"
+      shift 2
+      ;;
+    --environment-host)
+      ENVIRONMENT_HOST="$2"
       shift 2
       ;;
     --include-all-cases)
@@ -111,6 +121,29 @@ if [ -z "$BROWSER" ]; then
   usage
 else
   CONFIGURATION="{\"browser\":\"$BROWSER\"}"
+fi
+
+# Handle environment creation/retrieval if environment parameters are provided
+if [ -n "$ENVIRONMENT_SLUG" ] && [ -n "$ENVIRONMENT_TITLE" ]; then
+  echo "Creating or retrieving environment: $ENVIRONMENT_TITLE ($ENVIRONMENT_SLUG)"
+  
+  # Validate that ENVIRONMENT_HOST is provided for environment creation
+  if [ -z "$ENVIRONMENT_HOST" ]; then
+    echo "Error: ENVIRONMENT_HOST is required when creating environments"
+    exit 1
+  fi
+  
+  # Build qasectl environment create command
+  ENV_CMD="qasectl testops env create --project $PROJECT_CODE --token $API_TOKEN --title '$ENVIRONMENT_TITLE' --slug '$ENVIRONMENT_SLUG' --host '$ENVIRONMENT_HOST'"
+  
+  # Execute environment creation/retrieval
+  echo "Executing: $ENV_CMD"
+  if ! eval "$ENV_CMD"; then
+    echo "Error: Failed to create or retrieve environment"
+    exit 1
+  fi
+  
+  echo "Environment $ENVIRONMENT_SLUG is ready"
 fi
 
 echo "Creating test run in Qase project: $PROJECT_CODE"
@@ -176,7 +209,6 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
   fi
 
   # Extract the status information
-  STATUS=$(echo "$RUN_RESPONSE" | grep -o '"status":[0-9]*' | head -1 | cut -d':' -f2)
   STATUS_TEXT=$(echo "$RUN_RESPONSE" | grep -o '"status_text":"[^"]*"' | head -1 | cut -d'"' -f4)
   TOTAL=$(echo "$RUN_RESPONSE" | grep -o '"total":[0-9]*' | head -1 | cut -d':' -f2)
   STATUSES=$(echo "$RUN_RESPONSE" | grep -o '"statuses":{[^}]*}' | head -1)
@@ -217,7 +249,7 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
     fi
   fi
 
-  sleep $POLL_INTERVAL
+  sleep "$POLL_INTERVAL"
 
   if [ $TOTAL_STATUSES -ne $PROCESSED_COUNTER ]; then
     PROCESSED_COUNTER=$TOTAL_STATUSES

@@ -19,8 +19,14 @@ inputs:
     description: 'Include all cases in the project'
     required: false
     default: 'false'
-  environment_id:
-    description: 'Environment ID to assign to the run'
+  env_slug:
+    description: 'Environment slug to assign to the run'
+    required: false
+  env_title:
+    description: 'Environment title for creating new environment (used with env_slug)'
+    required: false  
+  env_host:
+    description: 'Environment host URL for creating new environment'
     required: false
   browser:
     description: "Browser on which to run autotests"
