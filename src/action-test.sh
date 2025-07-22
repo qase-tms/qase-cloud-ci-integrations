@@ -66,7 +66,7 @@ echo "Running test with some tests failing..."
   function curl { mock_curl_failing "$@"; }
   export -f curl
 
-  if ./enttrypoint.sh \
+  if ./entrypoint.sh \
     --project-code TEST \
     --api-token test-token \
     --run-title "Test Run" \
