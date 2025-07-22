@@ -209,7 +209,6 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
   fi
 
   # Extract the status information
-  STATUS=$(echo "$RUN_RESPONSE" | grep -o '"status":[0-9]*' | head -1 | cut -d':' -f2)
   STATUS_TEXT=$(echo "$RUN_RESPONSE" | grep -o '"status_text":"[^"]*"' | head -1 | cut -d'"' -f4)
   TOTAL=$(echo "$RUN_RESPONSE" | grep -o '"total":[0-9]*' | head -1 | cut -d':' -f2)
   STATUSES=$(echo "$RUN_RESPONSE" | grep -o '"statuses":{[^}]*}' | head -1)
@@ -250,7 +249,7 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
     fi
   fi
 
-  sleep $POLL_INTERVAL
+  sleep "$POLL_INTERVAL"
 
   if [ $TOTAL_STATUSES -ne $PROCESSED_COUNTER ]; then
     PROCESSED_COUNTER=$TOTAL_STATUSES
