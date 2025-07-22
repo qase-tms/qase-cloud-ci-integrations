@@ -52,7 +52,7 @@ mock_curl_failing() {
   if [[ "$url" == *"/run/TEST" && ! "$url" == *"/run/TEST/"* ]]; then
     echo '{"status":true,"result":{"id":124}}'
   elif [[ "$url" == *"/run/TEST/124"* ]]; then
-    echo '{"status":true,"result":{"id":124,"status":3,"status_text":"completed","stats":{"total":3,"statuses":{"1":2,"2":1}}}}'
+    echo '{"status":true,"result":{"id":124,"status":3,"status_text":"completed","stats":{"total":3,"statuses":{"passed":1,"failed":2}}}}'
   else
     echo "Unexpected curl call: $@" >&2
     exit 1
@@ -66,16 +66,27 @@ echo "Running test with some tests failing..."
   function curl { mock_curl_failing "$@"; }
   export -f curl
 
-  if ./entrypoint.sh \
+  # Capture both stdout and stderr, and the exit code
+  OUTPUT=$(./action.sh \
     --project-code TEST \
     --api-token test-token \
     --run-title "Test Run" \
-    --case-ids 1,2,3; then
+    --case-ids 1,2,3 2>&1) || EXIT_CODE=$?
 
+  # Check if script failed as expected
+  if [ "${EXIT_CODE:-0}" -eq 0 ]; then
     echo "❌ Test failed: Script should have exited with error when tests failed"
     exit 1
+  fi
+
+  # Check if the specific failure message is present
+  if echo "$OUTPUT" | grep -q "Test run has failed! ❌"; then
+    echo "✅ Test passed: Script correctly exited with error and showed failure message"
   else
-    echo "✅ Test passed: Script correctly exited with error when tests failed"
+    echo "❌ Test failed: Script exited with error but didn't show expected failure message"
+    echo "Actual output:"
+    echo "$OUTPUT"
+    exit 1
   fi
 )
 
